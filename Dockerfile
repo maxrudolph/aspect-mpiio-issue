@@ -14,6 +14,7 @@ RUN apt-get -y install sudo wget build-essential cmake subversion git \
 
 RUN apt-get -y install libblas-dev liblapack-dev libblas3 liblapack3
 RUN apt-get -y install gfortran
+RUN apt-get -y remove openmpi-bin openmpi-common
 
 # download, build, and install mpi WITHOUT MPI-IO
 RUN wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.2.tar.gz
@@ -32,7 +33,9 @@ ENV PATH="/opt/openmpi-4.0.2/bin:${PATH}"
 WORKDIR /build
 RUN git clone https://github.com/dealii/candi.git
 WORKDIR /build/candi
-RUN ./candi.sh \
+RUN CC=/opt/openmpi-4.0.2/bin/mpicc \
+    CXX=/opt/openmpi-4.0.2/bin/mpic++ \
+    ./candi.sh \
      --platform=deal.II-toolchain/platforms/supported/ubuntu18.platform \
      --prefix=/opt/dealii-toolchain \
      --packages="hdf5 p4est trilinos dealii" \
@@ -48,4 +51,8 @@ RUN cmake -D DEAL_II_DIR=/opt/dealii-toolchain/deal.II-v9.1.1 ..
 RUN make debug
 RUN make -j 16
 RUN mkdir /aspect_run
+RUN useradd -ms /bin/bash aspect
 
+RUN sudo apt-get install -y openssh-server binutils
+RUN sudo /etc/init.d/ssh start
+EXPOSE 22/tcp
