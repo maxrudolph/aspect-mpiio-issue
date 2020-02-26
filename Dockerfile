@@ -37,13 +37,15 @@ RUN ./candi.sh \
      --prefix=/opt/dealii-toolchain \
      --packages="hdf5 p4est trilinos dealii" \
      -j 16
+     
 # compile and install aspect
 WORKDIR /build
 RUN git clone https://github.com/geodynamics/aspect.git
 WORKDIR /build/aspect
 RUN mkdir build
 WORKDIR /build/aspect/build
-RUN cmake -D DEAL_II_DIR=/opt/dealii-toolchain/deal.II-master ..
+RUN cmake -D DEAL_II_DIR=/opt/dealii-toolchain/deal.II-v9.1.1 ..
 RUN make debug
 RUN make -j 16
+RUN mkdir /aspect_run
 
