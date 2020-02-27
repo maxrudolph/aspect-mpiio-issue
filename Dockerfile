@@ -39,8 +39,14 @@ ENV PATH="/opt/openmpi-4.0.2/bin:${PATH}"
 
 # download candi to install p4est, dealii, trilinos, hdf5
 WORKDIR /build
-RUN git clone https://github.com/dealii/candi.git
+# force git pull if HEAD changes:
+ADD https://api.github.com/repos/maxrudolph/candi/git/refs/heads/master candi-master.json
+ADD https://api.github.com/repos/maxrudolph/candi/git/refs/heads/disable-mpiio candi-disable-mpiio.json
+RUN git clone https://github.com/maxrudolph/candi.git
 WORKDIR /build/candi
+# Uncomment this line to build p4est without mpi-io
+RUN git checkout disable-mpiio
+
 RUN CC=/opt/openmpi-4.0.2/bin/mpicc \
     CXX=/opt/openmpi-4.0.2/bin/mpic++ \
     ./candi.sh \
@@ -55,7 +61,7 @@ RUN git clone https://github.com/geodynamics/aspect.git
 WORKDIR /build/aspect
 RUN mkdir build
 WORKDIR /build/aspect/build
-RUN cmake -D DEAL_II_DIR=/opt/dealii-toolchain/deal.II-v9.1.1 ..
+RUN cmake -D DEAL_II_DIR=/opt/dealii-toolchain/deal.II-v9.1.0 ..
 RUN make debug
 RUN make -j $BUILD_THREADS
 RUN mkdir /aspect_run
