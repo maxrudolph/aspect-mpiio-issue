@@ -61,10 +61,10 @@ RUN make -j $BUILD_THREADS
 RUN mkdir /aspect_run
 
 # Quick last minute package changes:
-RUN apt-get -y install nano 
+RUN apt-get -y --no-install-recommends install nano 
 
 RUN apt-get -y remove openssh-server
-RUN apt-get -y install openssh-server
+RUN apt-get -y --no-install-recommends install openssh-server
 RUN mkdir /var/run/sshd
 
 # Some of this is necessary to get sshd working, which in turn is needed for mpi
@@ -80,7 +80,7 @@ RUN ssh-keygen -q -t rsa -N '' -f /home/aspect/.ssh/id_rsa
 RUN cat /home/aspect/.ssh/id_rsa.pub >> /home/aspect/.ssh/authorized_keys
 # Trust localhost:
 RUN ssh-keyscan -t rsa localhost >> /home/aspect/.ssh/known_hosts
-ADD run_testprog.sh /home/aspect/run_testprog.sh
+ADD run_aspect.sh /home/aspect/run_aspect.sh
 
 # Execute the script to run aspect
 CMD [ "bash", "/home/aspect/run_aspect.sh"]]
