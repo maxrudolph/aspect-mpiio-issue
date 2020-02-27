@@ -66,10 +66,10 @@ end
 
 
 subsection Mesh refinement
-  set Initial global refinement          = 3
+  set Initial global refinement          = 2
   set Initial adaptive refinement        = 0
   set Strategy                           = temperature
-  set Time steps between mesh refinement = 15
+  set Time steps between mesh refinement = 0
 end
 
 

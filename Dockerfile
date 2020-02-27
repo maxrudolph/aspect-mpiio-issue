@@ -14,6 +14,7 @@ RUN apt-get -y install sudo wget build-essential cmake subversion git \
 
 RUN apt-get -y install libblas-dev liblapack-dev libblas3 liblapack3
 RUN apt-get -y install gfortran
+RUN apt-get -y install openssh-server binutils
 RUN apt-get -y remove openmpi-bin openmpi-common
 
 # download, build, and install mpi WITHOUT MPI-IO
@@ -28,6 +29,7 @@ RUN ./configure --prefix=/opt/openmpi-4.0.2 \
     --disable-io-ompio
 RUN make -j 16 install
 ENV PATH="/opt/openmpi-4.0.2/bin:${PATH}"
+#RUN apt-get -y install openmpi-bin openmpi-common libblacs-mpi-dev
 
 # download candi to install p4est, dealii, trilinos, hdf5
 WORKDIR /build
@@ -38,7 +40,7 @@ RUN CC=/opt/openmpi-4.0.2/bin/mpicc \
     ./candi.sh \
      --platform=deal.II-toolchain/platforms/supported/ubuntu18.platform \
      --prefix=/opt/dealii-toolchain \
-     --packages="hdf5 p4est trilinos dealii" \
+     --packages="p4est trilinos dealii" \
      -j 16
      
 # compile and install aspect
@@ -51,8 +53,32 @@ RUN cmake -D DEAL_II_DIR=/opt/dealii-toolchain/deal.II-v9.1.1 ..
 RUN make debug
 RUN make -j 16
 RUN mkdir /aspect_run
-RUN useradd -ms /bin/bash aspect
 
-RUN sudo apt-get install -y openssh-server binutils
+# Quick last minute package changes:
+RUN apt-get -y install nano 
+
+RUN apt-get -y remove openssh-server
+RUN apt-get -y install openssh-server
+RUN mkdir /var/run/sshd
 RUN sudo /etc/init.d/ssh start
+#RUN echo 'root:root' | chpasswd
+#RUN mkdir /root/.ssh
+
+# Some of this is necessary to get sshd working, which in turn is needed for mpi
+# Working passwordless rsh is required even if communicationi s via shared memory
+#RUN sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config
 EXPOSE 22/tcp
+
+# Setup non-root user
+RUN adduser --disabled-password --gecos '' aspect
+RUN adduser aspect sudo; echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+USER aspect
+# generate and trust a RSA key:
+RUN ssh-keygen -q -t rsa -N '' -f /home/aspect/.ssh/id_rsa
+RUN cat /home/aspect/.ssh/id_rsa.pub >> /home/aspect/.ssh/authorized_keys
+# Trust localhost:
+RUN ssh-keyscan -t rsa localhost >> /home/aspect/.ssh/known_hosts
+ADD run_testprog.sh /home/aspect/run_testprog.sh
+CMD [ "bash", "/home/aspect/run_testprog.sh"]]
+
+#USER aspect
